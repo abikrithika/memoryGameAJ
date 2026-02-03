@@ -15,6 +15,21 @@
    
    <h1>Flip & Match | Memory Game</h1>
 
+  <div id="gameModal" class="modal">
+  <div class="modal-content">
+    <h2 id="endMessage">🌌 Mission Complete!</h2>
+    <p>🚀 Reveals: <span id="finalReveals"></span></p>
+    <p>🛰 Attempts: <span id="finalAttempts"></span></p>
+    <button id="restartBtn">Play Again</button>
+  </div>
+</div>
+
+
+<p id="gameOver" style="display:none; font-size:1.5rem; margin-top:20px;">
+  🎉 End of Game!
+</p>
+
+
   <div class="card-grid">
     <!-- Pair 1: Planet -->
     <div class="flip-card"><div class="flip-card-inner">
@@ -76,6 +91,7 @@
       <div class="flip-card-back"><img src="../Images/rocket.jfif" alt="Planet" /></div>
     </div></div>
   </div>
+  
   <script src="../JS/script.js"></script>
   </body>
 </html>

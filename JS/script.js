@@ -1,6 +1,15 @@
 const cards = document.querySelectorAll(".flip-card");
+const modal = document.getElementById("gameModal");
+const endMessageEl = document.getElementById("endMessage");
+const finalRevealsEl = document.getElementById("finalReveals");
+const finalAttemptsEl = document.getElementById("finalAttempts");
+const restartBtn = document.getElementById("restartBtn");
 
 let openCards = [];
+let matchedCards = 0;
+let totalCards = cards.length;
+let reveals = 0;
+let attempts = 0;
 
 cards.forEach((card) => {
   card.addEventListener("click", () => {
@@ -18,19 +27,54 @@ cards.forEach((card) => {
     card.classList.add("flipped");
     openCards.push(card);
 
+    reveals++;
+    // console.log("Reveals:", reveals);
+
     if (openCards.length === 2) {
+      attempts++;
+      // console.log("Attempts:", attempts);
+
       const img1 = openCards[0].querySelector(".flip-card-back img").src;
       const img2 = openCards[1].querySelector(".flip-card-back img").src;
 
       if (img1 === img2) {
+        matchedCards += 2;
         openCards = [];
       }
+
+      checkEndOfGame();
     }
   });
 });
 
-// Shuffle cards
 cards.forEach((card) => {
   const randomOrder = Math.floor(Math.random() * cards.length);
   card.style.order = randomOrder;
+});
+
+function checkEndOfGame() {
+  if (matchedCards === totalCards) {
+    showEndGameModal();
+  }
+}
+
+function showEndGameModal() {
+  finalRevealsEl.textContent = reveals;
+  finalAttemptsEl.textContent = attempts;
+  endMessageEl.textContent = getSpaceEndMessage();
+  modal.style.display = "flex";
+}
+
+function getSpaceEndMessage() {
+  if (attempts <= totalCards / 2) {
+    return "🌟 Perfect Mission! Stellar Memory!";
+  } else if (attempts <= totalCards) {
+    return "🚀 Mission Success! Orbit Achieved!";
+  } else {
+    return "🪐 Mission Complete! You Made It Home!";
+  }
+}
+
+restartBtn.addEventListener("click", () => {
+  location.reload();
 });
