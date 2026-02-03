@@ -4,6 +4,11 @@ const endMessageEl = document.getElementById("endMessage");
 const finalRevealsEl = document.getElementById("finalReveals");
 const finalAttemptsEl = document.getElementById("finalAttempts");
 const restartBtn = document.getElementById("restartBtn");
+let timer = null;
+let seconds = 0;
+let timerStarted = false;
+
+const gameTimeEl = document.getElementById("gameTime");
 
 let openCards = [];
 let matchedCards = 0;
@@ -13,6 +18,14 @@ let attempts = 0;
 
 cards.forEach((card) => {
   card.addEventListener("click", () => {
+    if (!timerStarted) {
+      timerStarted = true;
+      timer = setInterval(() => {
+        seconds++;
+        gameTimeEl.textContent = seconds;
+      }, 1000);
+    }
+
     if (card.classList.contains("flipped")) {
       card.classList.remove("flipped");
       openCards = openCards.filter((c) => c !== card);
@@ -59,8 +72,12 @@ function checkEndOfGame() {
 }
 
 function showEndGameModal() {
+  // Stop timer
+  if (timer) clearInterval(timer);
+
   finalRevealsEl.textContent = reveals;
   finalAttemptsEl.textContent = attempts;
+  gameTimeEl.textContent = seconds; // Display total time
   endMessageEl.textContent = getSpaceEndMessage();
   modal.style.display = "flex";
 }
