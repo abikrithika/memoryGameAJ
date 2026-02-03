@@ -1,23 +1,28 @@
+// ---------------- SELECT ELEMENTS ----------------
 const cards = document.querySelectorAll(".flip-card");
 const modal = document.getElementById("gameModal");
 const endMessageEl = document.getElementById("endMessage");
 const finalRevealsEl = document.getElementById("finalReveals");
 const finalAttemptsEl = document.getElementById("finalAttempts");
-const restartBtn = document.getElementById("restartBtn");
-let timer = null;
-let seconds = 0;
-let timerStarted = false;
-
 const gameTimeEl = document.getElementById("gameTime");
+const restartBtn = document.getElementById("restartBtn");
 
+// ---------------- GAME VARIABLES ----------------
 let openCards = [];
 let matchedCards = 0;
 let totalCards = cards.length;
 let reveals = 0;
 let attempts = 0;
 
+// Timer variables
+let timer = null;
+let seconds = 0;
+let timerStarted = false;
+
+// ---------------- CARD CLICK LOGIC ----------------
 cards.forEach((card) => {
   card.addEventListener("click", () => {
+    // Start timer on first reveal
     if (!timerStarted) {
       timerStarted = true;
       timer = setInterval(() => {
@@ -26,45 +31,44 @@ cards.forEach((card) => {
       }, 1000);
     }
 
-    if (card.classList.contains("flipped")) {
-      card.classList.remove("flipped");
-      openCards = openCards.filter((c) => c !== card);
-      return;
-    }
+    // Prevent clicking already flipped or currently open cards
+    if (card.classList.contains("flipped") || openCards.includes(card)) return;
 
-    if (openCards.length === 2) {
-      openCards.forEach((c) => c.classList.remove("flipped"));
-      openCards = [];
-    }
-
+    // Flip the card
     card.classList.add("flipped");
     openCards.push(card);
-
     reveals++;
-    // console.log("Reveals:", reveals);
 
+    // Check if 2 cards are flipped
     if (openCards.length === 2) {
       attempts++;
-      // console.log("Attempts:", attempts);
 
       const img1 = openCards[0].querySelector(".flip-card-back img").src;
       const img2 = openCards[1].querySelector(".flip-card-back img").src;
 
       if (img1 === img2) {
+        // MATCH → Keep cards flipped
         matchedCards += 2;
         openCards = [];
+        checkEndOfGame();
+      } else {
+        // NO MATCH → Flip back automatically after 1 second
+        setTimeout(() => {
+          openCards.forEach((c) => c.classList.remove("flipped"));
+          openCards = [];
+        }, 1000); // 1000ms = 1 second
       }
-
-      checkEndOfGame();
     }
   });
 });
 
+// ---------------- SHUFFLE CARDS ON LOAD ----------------
 cards.forEach((card) => {
   const randomOrder = Math.floor(Math.random() * cards.length);
   card.style.order = randomOrder;
 });
 
+// ---------------- END OF GAME LOGIC ----------------
 function checkEndOfGame() {
   if (matchedCards === totalCards) {
     showEndGameModal();
@@ -75,10 +79,15 @@ function showEndGameModal() {
   // Stop timer
   if (timer) clearInterval(timer);
 
+  // Display stats
   finalRevealsEl.textContent = reveals;
   finalAttemptsEl.textContent = attempts;
-  gameTimeEl.textContent = seconds; // Display total time
+  gameTimeEl.textContent = seconds;
+
+  // Space-themed message
   endMessageEl.textContent = getSpaceEndMessage();
+
+  // Show modal
   modal.style.display = "flex";
 }
 
@@ -92,6 +101,7 @@ function getSpaceEndMessage() {
   }
 }
 
+// ---------------- RESTART GAME ----------------
 restartBtn.addEventListener("click", () => {
-  location.reload();
+  location.reload(); // Reload page to reset game
 });
