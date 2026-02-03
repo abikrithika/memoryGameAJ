@@ -8,7 +8,8 @@ body {
   padding: 20px;
 
   /* Space gradient */
-  background: radial-gradient(circle at 20% 20%, #0b0c3f, #0a0a23 70%, #000000);
+  background: url("../Images/space.jpg") no-repeat center center fixed;
+  background-size: cover;
   color: white;
 }
 
