@@ -100,14 +100,10 @@ function renderCards() {
 }
 
 function shuffleCards(array) {
-  const shuffled = [...array]; // Create copy
+  const shuffled = [...array];
 
-  // Start from the end and work backwards
   for (let i = shuffled.length - 1; i > 0; i--) {
-    // Pick a random index from 0 to i
     const j = Math.floor(Math.random() * (i + 1));
-
-    // Swap elements at positions i and j
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
