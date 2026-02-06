@@ -1,68 +1,21 @@
-// Define data
 const cardData = [
-  { id: 1, name: "Cat", emoji: "🐱" },
-  { id: 2, name: "Dog", emoji: "🐶" },
-  { id: 3, name: "Fox", emoji: "🦊" },
-  { id: 4, name: "Lion", emoji: "🦁" },
-  { id: 5, name: "Panda", emoji: "🐼" },
-  { id: 6, name: "Koala", emoji: "🐨" },
+  { id: 1, name: "Sun", image: "sun.jfif" },
+  { id: 2, name: "Moon", image: "moon.jfif" },
+  { id: 3, name: "Star", image: "star.webp" },
+  { id: 4, name: "Comet", image: "comet.jfif" },
+  { id: 5, name: "Rocket", image: "rocket.jfif" },
+  { id: 6, name: "Planets", image: "planets.jpg" },
 ];
 
-// Initialize state
 let cards = [];
 let flippedCards = [];
 let revealCount = 0;
-let matchedPairs = 0;
-const TOTAL_PAIRS = cardData.length;
 let seconds = 0;
 let timerStarted = false;
 let timerInterval = null;
 
-// Create a pair for each cardData
 function createPairs(cardData) {
   return [...cardData, ...cardData];
-}
-
-// Check win with timer stop
-function checkWinCondition() {
-  if (matchedPairs === TOTAL_PAIRS) {
-    // Stop the timer
-    clearInterval(timerInterval);
-
-    // Show win message
-    setTimeout(() => {
-      const message = `🎉 You won!\nTime: ${formatTime(seconds)}\nReveals: ${revealCount}`;
-      alert(message);
-    }, 500);
-  }
-}
-
-// Check if two cards match
-function checkForMatch() {
-  const [card1, card2] = flippedCards;
-  const id1 = card1.dataset.cardId;
-  const id2 = card2.dataset.cardId;
-
-  if (id1 === id2) {
-    // Wait for flip animation to complete
-
-    setTimeout(() => {
-      card1.classList.add("matched");
-      card2.classList.add("matched");
-      flippedCards = [];
-      matchedPairs++;
-
-      // Check if game is won
-      checkWinCondition();
-    }, 600);
-  } else {
-    // Flip back after 1.5 seconds
-    setTimeout(() => {
-      card1.classList.remove("flipped");
-      card2.classList.remove("flipped");
-      flippedCards = [];
-    }, 1500);
-  }
 }
 
 function incrementRevealCount() {
@@ -71,56 +24,64 @@ function incrementRevealCount() {
 }
 
 function handleCardClick(event) {
-  // Start timing when first click
   startTimer();
-
   const card = event.currentTarget;
 
-  // Prevent clicking if 2 cards already flipped
   if (flippedCards.length === 2) {
     return;
   }
 
-  // Add to flipped cards array
   flippedCards.push(card);
   card.classList.add("flipped");
 
-  // Click is a reveal
   incrementRevealCount();
+  const [card1, card2] = flippedCards;
 
-  // Check for match when 2 cards are flipped
   if (flippedCards.length === 2) {
-    checkForMatch();
+    setTimeout(() => {
+      card1.classList.remove("flipped");
+      card2.classList.remove("flipped");
+      flippedCards = [];
+    }, 1000);
   }
 }
 
-// Create a card to put in the HTML container
+function createTagClassElement(tagName, className) {
+  const element = document.createElement(tagName);
+  element.className = className;
+  return element;
+}
+
+function createImageClassElement(src, alt, className) {
+  const image = document.createElement("img");
+  image.src = src;
+  image.alt = alt;
+  image.className = className;
+  return image;
+}
+
 function createCardElement(card) {
-  const cardElement = document.createElement("div");
-  cardElement.className = "card";
+  const cardElement = createTagClassElement("li", "card");
   cardElement.dataset.cardId = card.id;
 
-  const cardInner = document.createElement("div");
-  cardInner.className = "card-inner";
+  const cardInner = createTagClassElement("div", "card-inner");
 
-  const cardFront = document.createElement("div");
-  cardFront.className = "card-front";
-  const pattern = document.createElement("div");
-  pattern.className = "pattern";
-  pattern.textContent = "♦ ♠ ♣ ♥";
-  cardFront.appendChild(pattern);
+  const cardFront = createTagClassElement("div", "card-front");
+  const frontImage = createImageClassElement(
+    "../images/cardFront.jpg",
+    "Card front",
+    "card-image",
+  );
+  cardFront.appendChild(frontImage);
 
-  const cardBack = document.createElement("div");
-  cardBack.className = "card-back";
-  const emoji = document.createElement("div");
-  emoji.className = "emoji";
-  emoji.textContent = card.emoji;
-  const name = document.createElement("div");
-  name.className = "name";
-  name.textContent = card.name;
-  cardBack.appendChild(emoji);
-  cardBack.appendChild(name);
+  const cardBack = createTagClassElement("div", "card-back");
+  const image = createImageClassElement(
+    `../images/${card.image}`,
+    card.name,
+    "card-image",
+  );
 
+  cardBack.appendChild(image);
   cardInner.appendChild(cardFront);
   cardInner.appendChild(cardBack);
   cardElement.appendChild(cardInner);
@@ -130,17 +91,15 @@ function createCardElement(card) {
   return cardElement;
 }
 
-// Display the cards in the HTML cards-grid container
 function renderCards() {
-  const grid = document.querySelector(".cards-grid");
+  const grid = document.querySelector(".cards-list");
   cards.forEach((card) => {
     const cardElement = createCardElement(card);
     grid.appendChild(cardElement);
   });
 }
 
-// Shuffle the cards
-function shuffle(array) {
+function shuffleCards(array) {
   const shuffled = [...array]; // Create copy
 
   // Start from the end and work backwards
@@ -155,68 +114,53 @@ function shuffle(array) {
   return shuffled;
 }
 
-function formatTime(totalSeconds) {
+function formatTimeInMinSec(totalSeconds) {
   const mins = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-// Timer with Start Guard
 function startTimer() {
-  // Prevent starting multiple times
   if (timerStarted) return;
   timerStarted = true;
 
   timerInterval = setInterval(() => {
     seconds++;
-    document.getElementById("timer").textContent = formatTime(seconds);
+    document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
   }, 1000);
 
   // Trigger first increment immediately to avoid 1-second delay
   seconds++;
-  document.getElementById("timer").textContent = formatTime(seconds);
+  document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
 }
 
 function resetGame() {
-  // Reset state
   flippedCards = [];
-  matchedPairs = 0;
   revealCount = 0;
   seconds = 0;
   timerStarted = false;
 
-  // Stop timer
   clearInterval(timerInterval);
 
-  // Reset display
   document.getElementById("reveal-count").textContent = "0";
   document.getElementById("timer").textContent = "0:00";
 
-  // Clear grid
-  const grid = document.querySelector(".cards-grid");
+  const grid = document.querySelector(".cards-list");
   grid.innerHTML = "";
 
-  // Create new shuffled cards
-  cards = shuffle(createPairs(cardData));
+  cards = shuffleCards(createPairs(cardData));
 
-  // Re-render
   renderCards();
 }
 
-// Initialize game
 function initGame() {
-  // Create pairs
   const pairedCards = createPairs(cardData);
 
-  // Shuffle
-  cards = shuffle(pairedCards);
+  cards = shuffleCards(pairedCards);
 
-  // Render
   renderCards();
 }
 
-// Start game on page load
 initGame();
 
-// Add reset button listener
 document.getElementById("reset-btn").addEventListener("click", resetGame);
