@@ -13,6 +13,7 @@ let revealCount = 0;
 let seconds = 0;
 let timerStarted = false;
 let timerInterval = null;
+let frontImagePath = "cardFront.jpg";
 
 function createPairs(cardData) {
   return [...cardData, ...cardData];
@@ -46,48 +47,35 @@ function handleCardClick(event) {
   }
 }
 
-function createTagClassElement(tagName, className) {
-  const element = document.createElement(tagName);
+function createElement(tag, className, attributes = {}) {
+  const element = document.createElement(tag);
   element.className = className;
+  Object.entries(attributes).forEach(([key, value]) => {
+    element[key] = value;
+  });
   return element;
 }
 
-function createImageClassElement(src, alt, className) {
-  const image = document.createElement("img");
-  image.src = src;
-  image.alt = alt;
-  image.className = className;
-  return image;
+function createCardFace(className, imageSrc, imageAlt) {
+  const face = createElement("div", className);
+  face.appendChild(
+    createElement("img", "card-image", { src: imageSrc, alt: imageAlt }),
+  );
+  return face;
 }
 
 function createCardElement(card) {
-  const cardElement = createTagClassElement("li", "card");
+  const cardElement = createElement("li", "card");
   cardElement.dataset.cardId = card.id;
-
-  const cardInner = createTagClassElement("div", "card-inner");
-
-  const cardFront = createTagClassElement("div", "card-front");
-  const frontImage = createImageClassElement(
-    "../images/cardFront.jpg",
-    "Card front",
-    "card-image",
-  );
-  cardFront.appendChild(frontImage);
-
-  const cardBack = createTagClassElement("div", "card-back");
-  const image = createImageClassElement(
-    `../images/${card.image}`,
-    card.name,
-    "card-image",
-  );
-
-  cardBack.appendChild(image);
-  cardInner.appendChild(cardFront);
-  cardInner.appendChild(cardBack);
-  cardElement.appendChild(cardInner);
-
   cardElement.addEventListener("click", handleCardClick);
 
+  const cardInner = createElement("div", "card-inner");
+  cardInner.append(
+    createCardFace("card-front", `/images/${frontImagePath}`, "Card front"),
+    createCardFace("card-back", `/images/${card.image}`, card.name),
+  );
+
+  cardElement.appendChild(cardInner);
   return cardElement;
 }
 
