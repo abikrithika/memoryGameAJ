@@ -1,12 +1,3 @@
-const cardData = [
-  { id: 1, name: "Sun", image: "sun.jfif" },
-  { id: 2, name: "Moon", image: "moon.jfif" },
-  { id: 3, name: "Star", image: "star.webp" },
-  { id: 4, name: "Comet", image: "comet.jfif" },
-  { id: 5, name: "Rocket", image: "rocket.jfif" },
-  { id: 6, name: "Planets", image: "planets.jpg" },
-];
-
 let cards = [];
 let flippedCards = [];
 let revealCount = 0;
@@ -14,7 +5,24 @@ let seconds = 0;
 let timerStarted = false;
 let timerInterval = null;
 let frontImagePath = "cardFront.jpg";
+let totalPairs = 0;
 
+async function getCards() {
+  const response = await fetch("/api/cards"); // API endpoint
+  const data = await response.json();
+  return data; // returns array of cards
+}
+
+async function getGameConfig() {
+  try {
+    const response = await fetch("/api/config/card_front_image");
+    const data = await response.json();
+    return data.value || "cardFront.jpg"; // fallback
+  } catch (error) {
+    console.error("Config fetch error:", error);
+    return "cardFront.jpg"; // fallback
+  }
+}
 function createPairs(cardData) {
   return [...cardData, ...cardData];
 }
@@ -118,7 +126,7 @@ function startTimer() {
   document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
 }
 
-function resetGame() {
+async function resetGame() {
   flippedCards = [];
   revealCount = 0;
   seconds = 0;
@@ -132,19 +140,30 @@ function resetGame() {
   const grid = document.querySelector(".cards-list");
   grid.innerHTML = "";
 
-  cards = shuffleCards(createPairs(cardData));
+  // Fetch fresh cards from API
+  const cardDataFromAPI = await getCards();
+  totalPairs = cardDataFromAPI.length;
+
+  // Shuffle and create pairs
+  cards = shuffleCards(createPairs(cardDataFromAPI));
 
   renderCards();
 }
 
-function initGame() {
-  const pairedCards = createPairs(cardData);
+async function initGame() {
+  // Fetch front image from config API
+  frontImagePath = await getGameConfig();
 
+  // Fetch cards from API
+  const cardDataFromAPI = await getCards();
+
+  // Create pairs and shuffle
+  const pairedCards = createPairs(cardDataFromAPI);
   cards = shuffleCards(pairedCards);
 
+  // Render cards on page
   renderCards();
 }
-
 initGame();
 
 document.getElementById("reset-btn").addEventListener("click", resetGame);
