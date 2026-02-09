@@ -7,90 +7,16 @@
     <link rel="stylesheet" href="./css/styles.css" />
   </head>
   <body>
-    <div class="cards-grid">
-      <div class="card">
-        <div class="card-inner">
-          <div class="card-front">
-            <!-- Back pattern -->
-            <div class="pattern">♦ ♠ ♣ ♥</div>
-          </div>
-          <div class="card-back">
-            <!-- Card face -->
-            <div class="emoji">🐱</div>
-            <div class="name">Cat</div>
-          </div>
-        </div>
+    <div class="stats-container">
+      <div class="reveal-count-container">
+        <p>Reveals: <span id="reveal-count">0</span></p>
       </div>
-      <div class="card">
-        <div class="card-inner">
-          <div class="card-front">
-            <!-- Back pattern -->
-            <div class="pattern">♦ ♠ ♣ ♥</div>
-          </div>
-          <div class="card-back">
-            <!-- Card face -->
-            <div class="emoji">🐱</div>
-            <div class="name">Cat</div>
-          </div>
-        </div>
+      <div class="timer-container">
+        <p>Time: <span id="timer">0:00</span></p>
       </div>
-      <div class="card">
-        <div class="card-inner">
-          <div class="card-front">
-            <!-- Back pattern -->
-            <div class="pattern">♦ ♠ ♣ ♥</div>
-          </div>
-          <div class="card-back">
-            <!-- Card face -->
-            <div class="emoji">🐱</div>
-            <div class="name">Cat</div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-inner">
-          <div class="card-front">
-            <!-- Back pattern -->
-            <div class="pattern">♦ ♠ ♣ ♥</div>
-          </div>
-          <div class="card-back">
-            <!-- Card face -->
-            <div class="emoji">🐱</div>
-            <div class="name">Cat</div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-inner">
-          <div class="card-front">
-            <!-- Back pattern -->
-            <div class="pattern">♦ ♠ ♣ ♥</div>
-          </div>
-          <div class="card-back">
-            <!-- Card face -->
-            <div class="emoji">🐱</div>
-            <div class="name">Cat</div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-inner">
-          <div class="card-front">
-            <!-- Back pattern -->
-
-            <div class="pattern">♦ ♠ ♣ ♥</div>
-          </div>
-
-          <div class="card-back">
-            <!-- Card face -->
-
-            <div class="emoji">🐱</div>
-
-            <div class="name">Cat</div>
-          </div>
-        </div>
-      </div>
+      <button id="reset-btn" class="reset-button">Reset</button>
     </div>
-    <script scr="../scripts/script.js"></script>
+    <ul class="cards-list"></ul>
+    <script src="../scripts/script.js"></script>
   </body>
 </html>
