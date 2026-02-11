@@ -1,21 +1,18 @@
 let cards = [];
 let flippedCards = [];
-let matchedCards = []; // Track matched cards
+let revealCount = 0;
+let matchedCards = [];
 let seconds = 0;
 let timerStarted = false;
 let timerInterval = null;
 let frontImagePath = "cardFront.jpg";
 let totalPairs = 0;
 
-// ----------------------------
-// FETCH CARDS & CONFIG
-// ----------------------------
 async function getCards() {
   const response = await fetch("/api/cards"); // API endpoint
   const data = await response.json();
   return data; // returns array of cards
 }
-
 async function getGameConfig() {
   try {
     const response = await fetch("/api/config/card_front_image");
@@ -26,18 +23,12 @@ async function getGameConfig() {
     return "cardFront.jpg"; // fallback
   }
 }
-
 function createPairs(cardData) {
   return [...cardData, ...cardData];
 }
-
-// ----------------------------
-// TIMER
-// ----------------------------
-function formatTimeInMinSec(totalSeconds) {
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+function incrementRevealCount() {
+  revealCount++;
+  document.getElementById("reveal-count").textContent = revealCount;
 }
 
 function startTimer() {
@@ -54,17 +45,24 @@ function startTimer() {
   document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
 }
 
+function formatTimeInMinSec(totalSeconds) {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
 // ----------------------------
-// HANDLE CARD CLICK & MATCH
+// TASK 1: HANDLE CARD CLICK & MATCH (Disappear)
 // ----------------------------
 function handleCardClick(event) {
   startTimer();
   const card = event.currentTarget;
 
+  // Ignore clicks if already flipped or matched, or 2 cards are flipped
   if (
-    flippedCards.length === 2 || // Two cards already flipped
-    flippedCards.includes(card) || // Already flipped
-    matchedCards.includes(card) // Already matched
+    flippedCards.length === 2 ||
+    flippedCards.includes(card) ||
+    matchedCards.includes(card)
   )
     return;
 
@@ -72,6 +70,7 @@ function handleCardClick(event) {
   flippedCards.push(card);
 
   if (flippedCards.length === 2) {
+    incrementRevealCount();
     const [card1, card2] = flippedCards;
 
     if (card1.dataset.cardId === card2.dataset.cardId) {
@@ -80,8 +79,16 @@ function handleCardClick(event) {
         card1.style.visibility = "hidden";
         card2.style.visibility = "hidden";
 
-        matchedCards.push(card1, card2); // mark as matched
+        matchedCards.push(card1, card2); // Track matched cards
         flippedCards = [];
+
+        // Check if all pairs matched
+        if (matchedCards.length === cards.length) {
+          clearInterval(timerInterval); // stop timer
+          alert(
+            `🎉 Congratulations! You won in ${formatTimeInMinSec(seconds)} and ${revealCount} moves!`,
+          );
+        }
       }, 500);
     } else {
       // Not a match → flip back
@@ -150,26 +157,26 @@ function shuffleCards(array) {
 }
 
 // ----------------------------
-// RESET GAME
+// GAME RESET
 // ----------------------------
 async function resetGame() {
   flippedCards = [];
-  matchedCards = [];
+  matchedCards = []; // clear matched cards
+  revealCount = 0;
   seconds = 0;
   timerStarted = false;
 
   clearInterval(timerInterval);
 
+  document.getElementById("reveal-count").textContent = "0";
   document.getElementById("timer").textContent = "0:00";
 
   const grid = document.querySelector(".cards-list");
   grid.innerHTML = "";
 
-  // Fetch fresh cards from API
   const cardDataFromAPI = await getCards();
   totalPairs = cardDataFromAPI.length;
 
-  // Shuffle and create pairs
   cards = shuffleCards(createPairs(cardDataFromAPI));
 
   renderCards();
@@ -189,7 +196,7 @@ async function initGame() {
   const pairedCards = createPairs(cardDataFromAPI);
   cards = shuffleCards(pairedCards);
 
-  // Render cards
+  // Render cards on page
   renderCards();
 }
 
