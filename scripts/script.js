@@ -1,13 +1,3 @@
-// ===== CARD DATA =====
-const cardData = [
-  { id: 1, name: "Sun", image: "sun.jfif" },
-  { id: 2, name: "Moon", image: "moon.jfif" },
-  { id: 3, name: "Star", image: "star.webp" },
-  { id: 4, name: "Comet", image: "comet.jfif" },
-  { id: 5, name: "Rocket", image: "rocket.jfif" },
-  { id: 6, name: "Planets", image: "planets.jpg" },
-];
-
 let cards = [];
 let flippedCards = [];
 let matchedCards = [];
@@ -15,10 +5,35 @@ let seconds = 0;
 let timerStarted = false;
 let timerInterval = null;
 let score = 0;
+let frontImagePath = "cardFront.jpg";
+let totalPairs = 0;
+let revealCount = 0;
+
+// ===== API FUNCTIONS =====
+async function getCards() {
+  const response = await fetch("/api/cards"); // API endpoint
+  const data = await response.json();
+  return data; // returns array of cards
+}
+
+async function getGameConfig() {
+  try {
+    const response = await fetch("/api/config/card_front_image");
+    const data = await response.json();
+    return data.value || "cardFront.jpg"; // fallback
+  } catch (error) {
+    console.error("Config fetch error:", error);
+    return "cardFront.jpg"; // fallback
+  }
+}
 
 // ===== UTILITIES =====
+function createPairs(cardData) {
+  return [...cardData, ...cardData];
+}
+
 function shuffleCards(array) {
-  const shuffled = [...array, ...array]; // create pairs
+  const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -102,24 +117,49 @@ function handleCardClick(event) {
   }
 }
 
+// ===== CREATE CARD ELEMENT =====
+function createElement(tag, className, attributes = {}) {
+  const element = document.createElement(tag);
+  element.className = className;
+  Object.entries(attributes).forEach(([key, value]) => {
+    element[key] = value;
+  });
+  return element;
+}
+
+function createCardFace(className, imageSrc, imageAlt) {
+  const face = createElement("div", className);
+  face.appendChild(
+    createElement("img", "card-image", { src: imageSrc, alt: imageAlt }),
+  );
+  return face;
+}
+
+function createCardElement(card) {
+  const cardElement = createElement("li", "card");
+  cardElement.dataset.cardId = card.id;
+  cardElement.addEventListener("click", handleCardClick);
+
+  const cardInner = createElement("div", "card-inner");
+  cardInner.append(
+    createCardFace("card-front", `/images/${frontImagePath}`, "Card front"),
+    createCardFace("card-back", `/images/${card.image}`, card.name),
+  );
+
+  cardElement.appendChild(cardInner);
+  return cardElement;
+}
+
 // ===== RENDER CARDS =====
-function renderCards() {
+async function renderCards() {
   const grid = document.querySelector(".cards-list");
   grid.innerHTML = "";
 
+  // Shuffle and create pairs
+  cards = shuffleCards(cards);
+
   cards.forEach((card, index) => {
-    const li = document.createElement("li");
-    li.classList.add("card");
-    li.dataset.cardId = card.id;
-
-    li.innerHTML = `
-      <div class="card-inner">
-        <div class="card-front"><img src="/images/cardFront.jpg" class="card-image"></div>
-        <div class="card-back"><img src="/images/${card.image}" class="card-image"></div>
-      </div>
-    `;
-
-    li.addEventListener("click", handleCardClick);
+    const li = createCardElement(card);
 
     // SNAKE ANIMATION: delay each card's entrance
     li.style.transitionDelay = `${index * 0.1}s`;
@@ -128,7 +168,7 @@ function renderCards() {
     grid.appendChild(li);
   });
 
-  // Preview all cards for 3s
+  // Preview all cards for 2s
   const allCards = document.querySelectorAll(".card");
   allCards.forEach((c) => c.classList.add("flipped"));
   setTimeout(
@@ -136,6 +176,7 @@ function renderCards() {
     2000,
   );
 }
+
 // ===== RESET GAME =====
 function resetGame() {
   clearInterval(timerInterval);
@@ -144,15 +185,29 @@ function resetGame() {
   score = 0;
   seconds = 0;
   timerStarted = false;
+  revealCount = 0;
+
   document.getElementById("timer").textContent = "0:00";
   document.getElementById("reveal-count").textContent = score;
 
-  cards = shuffleCards(cardData);
   renderCards();
 }
 
 // ===== INIT GAME =====
-cards = shuffleCards(cardData);
-renderCards();
+async function initGame() {
+  // Fetch front image from config API
+  frontImagePath = await getGameConfig();
+
+  // Fetch cards from API
+  const cardDataFromAPI = await getCards();
+
+  // Create pairs and shuffle
+  cards = shuffleCards(createPairs(cardDataFromAPI));
+
+  // Render cards
+  renderCards();
+}
+
+initGame();
 
 document.getElementById("reset-btn").addEventListener("click", resetGame);

@@ -10,10 +10,10 @@ const app = express();
 app.use(express.json());
 
 // Serve frontend and assets
-app.use(express.static(path.join(__dirname, "../html"))); // index.html
-app.use("/scripts", express.static(path.join(__dirname, "../scripts"))); // script.js
-app.use("/css", express.static(path.join(__dirname, "../html/css"))); // styles.css
-app.use("/images", express.static(path.join(__dirname, "../images"))); // images
+app.use(express.static(path.join(__dirname, "../html")));
+app.use("/scripts", express.static(path.join(__dirname, "../scripts")));
+app.use("/css", express.static(path.join(__dirname, "../html/css")));
+app.use("/images", express.static(path.join(__dirname, "../images")));
 
 // Database setup
 const db = knex({
