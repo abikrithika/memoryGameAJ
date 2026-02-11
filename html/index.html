@@ -16,8 +16,23 @@
       </div>
       <button id="reset-btn" class="reset-button">Reset</button>
     </div>
+    <div class="level-container">
+      <label for="level">Level:</label>
+      <select id="level">
+        <option value="easy">Easy (6 pairs)</option>
+        <option value="medium">Medium (8 pairs)</option>
+        <option value="hard">Hard (12 pairs)</option>
+      </select>
+    </div>
 
     <ul class="cards-list"></ul>
+    <div id="game-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2 id="modal-title"></h2>
+        <p id="modal-message"></p>
+        <button id="modal-btn">Play Again</button>
+      </div>
+    </div>
 
     <script src="/scripts/script.js" type="module"></script>
   </body>

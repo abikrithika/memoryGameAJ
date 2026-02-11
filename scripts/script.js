@@ -6,23 +6,38 @@ let timerStarted = false;
 let timerInterval = null;
 let frontImagePath = "cardFront.jpg";
 let totalPairs = 0;
+let currentLevel = "easy";
+let matchedPairs = 0;
+let gameOver = false;
+
+const levelConfig = {
+  easy: 6,
+  medium: 8,
+  hard: 12,
+};
+
+const maxTimeByLevel = {
+  easy: 100,
+  medium: 90,
+  hard: 60,
+};
 
 async function getCards() {
-  const response = await fetch("/api/cards"); // API endpoint
-  const data = await response.json();
-  return data; // returns array of cards
+  const response = await fetch("/api/cards");
+  return response.json();
 }
 
 async function getGameConfig() {
   try {
     const response = await fetch("/api/config/card_front_image");
     const data = await response.json();
-    return data.value || "cardFront.jpg"; // fallback
+    return data.value || "cardFront.jpg";
   } catch (error) {
     console.error("Config fetch error:", error);
-    return "cardFront.jpg"; // fallback
+    return "cardFront.jpg";
   }
 }
+
 function createPairs(cardData) {
   return [...cardData, ...cardData];
 }
@@ -36,22 +51,40 @@ function handleCardClick(event) {
   startTimer();
   const card = event.currentTarget;
 
-  if (flippedCards.length === 2) {
+  if (
+    gameOver ||
+    card.classList.contains("flipped") ||
+    flippedCards.length === 2
+  ) {
     return;
   }
 
-  flippedCards.push(card);
   card.classList.add("flipped");
-
+  flippedCards.push(card);
   incrementRevealCount();
-  const [card1, card2] = flippedCards;
 
   if (flippedCards.length === 2) {
-    setTimeout(() => {
-      card1.classList.remove("flipped");
-      card2.classList.remove("flipped");
+    const [card1, card2] = flippedCards;
+
+    if (card1.dataset.cardId === card2.dataset.cardId) {
+      matchedPairs++;
       flippedCards = [];
-    }, 1000);
+
+      if (matchedPairs === totalPairs) {
+        gameOver = true;
+        clearInterval(timerInterval);
+        showModal(
+          "🚀 Mission Complete!",
+          `You matched all pairs in ${seconds} seconds with ${revealCount} reveals!`,
+        );
+      }
+    } else {
+      setTimeout(() => {
+        card1.classList.remove("flipped");
+        card2.classList.remove("flipped");
+        flippedCards = [];
+      }, 1000);
+    }
   }
 }
 
@@ -90,19 +123,16 @@ function createCardElement(card) {
 function renderCards() {
   const grid = document.querySelector(".cards-list");
   cards.forEach((card) => {
-    const cardElement = createCardElement(card);
-    grid.appendChild(cardElement);
+    grid.appendChild(createCardElement(card));
   });
 }
 
 function shuffleCards(array) {
   const shuffled = [...array];
-
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-
   return shuffled;
 }
 
@@ -119,11 +149,26 @@ function startTimer() {
   timerInterval = setInterval(() => {
     seconds++;
     document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
-  }, 1000);
 
-  // Trigger first increment immediately to avoid 1-second delay
-  seconds++;
-  document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
+    if (seconds >= maxTimeByLevel[currentLevel]) {
+      clearInterval(timerInterval);
+      showModal(
+        "⏰ Mission Failed",
+        "Time ran out! The galaxy needs you again.",
+      );
+      resetGame();
+    }
+  }, 1000);
+}
+
+function updateGridByLevel() {
+  const grid = document.querySelector(".cards-list");
+
+  if (currentLevel === "hard") {
+    grid.style.gridTemplateColumns = "repeat(6, 75px)";
+  } else {
+    grid.style.gridTemplateColumns = "repeat(4, 75px)";
+  }
 }
 
 async function resetGame() {
@@ -131,6 +176,8 @@ async function resetGame() {
   revealCount = 0;
   seconds = 0;
   timerStarted = false;
+  matchedPairs = 0;
+  gameOver = false;
 
   clearInterval(timerInterval);
 
@@ -139,31 +186,60 @@ async function resetGame() {
 
   const grid = document.querySelector(".cards-list");
   grid.innerHTML = "";
+  updateGridByLevel();
 
-  // Fetch fresh cards from API
   const cardDataFromAPI = await getCards();
-  totalPairs = cardDataFromAPI.length;
 
-  // Shuffle and create pairs
-  cards = shuffleCards(createPairs(cardDataFromAPI));
+  const requestedPairs = levelConfig[currentLevel];
+  const availablePairs = Math.min(requestedPairs, cardDataFromAPI.length);
+
+  totalPairs = availablePairs;
+
+  const selectedCards = cardDataFromAPI.slice(0, availablePairs);
+  cards = shuffleCards(createPairs(selectedCards));
 
   renderCards();
 }
 
 async function initGame() {
-  // Fetch front image from config API
   frontImagePath = await getGameConfig();
 
-  // Fetch cards from API
   const cardDataFromAPI = await getCards();
 
-  // Create pairs and shuffle
-  const pairedCards = createPairs(cardDataFromAPI);
-  cards = shuffleCards(pairedCards);
+  const requestedPairs = levelConfig[currentLevel];
+  const availablePairs = Math.min(requestedPairs, cardDataFromAPI.length);
 
-  // Render cards on page
+  totalPairs = availablePairs;
+  matchedPairs = 0;
+
+  const selectedCards = cardDataFromAPI.slice(0, availablePairs);
+  cards = shuffleCards(createPairs(selectedCards));
+
+  updateGridByLevel();
   renderCards();
 }
+
 initGame();
 
 document.getElementById("reset-btn").addEventListener("click", resetGame);
+
+document.getElementById("level").addEventListener("change", (e) => {
+  currentLevel = e.target.value;
+  resetGame();
+});
+
+function showModal(title, message) {
+  const modal = document.getElementById("game-modal");
+  document.getElementById("modal-title").textContent = title;
+  document.getElementById("modal-message").textContent = message;
+  modal.classList.remove("hidden");
+}
+
+function hideModal() {
+  document.getElementById("game-modal").classList.add("hidden");
+}
+
+document.getElementById("modal-btn").addEventListener("click", () => {
+  hideModal();
+  resetGame();
+});
