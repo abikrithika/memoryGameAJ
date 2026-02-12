@@ -144,7 +144,7 @@ function shuffleCards(array) {
 
 async function resetGame() {
   flippedCards = [];
-  matchedCards = []; // clear matched cards
+  matchedCards = [];
   revealCount = 0;
   seconds = 0;
   timerStarted = false;
