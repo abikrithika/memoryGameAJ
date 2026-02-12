@@ -7,21 +7,41 @@
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
-    <div class="stats-container">
-      <div class="reveal-count-container">
-        <p>
-          Reveals: <span id="reveal-count">0</span>
-          <span id="score-change" class="score-change"></span>
-          <!-- for +10 / -2 -->
-        </p>
-      </div>
-      <div class="timer-container">
-        <p>Time: <span id="timer">0:00</span></p>
-      </div>
-      <button id="reset-btn" class="reset-button">Reset</button>
+    <!-- FRONT PAGE -->
+    <div id="front-page" class="screen active">
+      <h1>Memory Game</h1>
+      <button id="start-btn">Start</button>
+      <button id="how-btn">How To Play</button>
     </div>
 
-    <ul class="cards-list"></ul>
+    <!-- HOW TO PLAY PAGE -->
+    <div id="how-page" class="screen">
+      <p>
+        Flip two cards at a time and try to match identical images. If they
+        match, you earn <strong>+10 points</strong>. If they do not match, they
+        flip back and you lose <strong>2 points</strong>. Match all pairs to win
+        the game!
+      </p>
+      <button id="back-btn">Back</button>
+    </div>
+
+    <!-- GAME PAGE -->
+    <div id="game-page" class="screen">
+      <div class="stats-container">
+        <div class="reveal-count-container">
+          <p>
+            Reveals: <span id="reveal-count">0</span>
+            <span id="score-change" class="score-change"></span>
+          </p>
+        </div>
+        <div class="timer-container">
+          <p>Time: <span id="timer">0:00</span></p>
+        </div>
+        <button id="reset-btn" class="reset-button">Reset</button>
+      </div>
+
+      <ul class="cards-list"></ul>
+    </div>
 
     <script src="/scripts/script.js" type="module"></script>
   </body>
