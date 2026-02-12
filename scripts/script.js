@@ -1,6 +1,7 @@
 let cards = [];
 let flippedCards = [];
 let revealCount = 0;
+let matchedCards = [];
 let seconds = 0;
 let timerStarted = false;
 let timerInterval = null;
@@ -23,38 +24,81 @@ const maxTimeByLevel = {
 };
 
 async function getCards() {
-  const response = await fetch("/api/cards");
-  return response.json();
+  const response = await fetch("/api/cards"); // API endpoint
+  const data = await response.json();
+  return data; // returns array of cards
 }
-
 async function getGameConfig() {
   try {
     const response = await fetch("/api/config/card_front_image");
     const data = await response.json();
-    return data.value || "cardFront.jpg";
+    return data.value || "cardFront.jpg"; // fallback
   } catch (error) {
     console.error("Config fetch error:", error);
-    return "cardFront.jpg";
+    return "cardFront.jpg"; // fallback
   }
 }
-
 function createPairs(cardData) {
   return [...cardData, ...cardData];
 }
-
 function incrementRevealCount() {
   revealCount++;
   document.getElementById("reveal-count").textContent = revealCount;
 }
 
+function startTimer() {
+  if (timerStarted) return;
+  timerStarted = true;
+
+  // Trigger first increment immediately (Week2 feature)
+  seconds++;
+  document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
+
+  timerInterval = setInterval(() => {
+    seconds++;
+    document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
+
+    // Week3 feature: check max time per level
+    if (seconds >= maxTimeByLevel[currentLevel]) {
+      clearInterval(timerInterval);
+      showModal(
+        "⏰ Mission Failed",
+        "Time ran out! The galaxy needs you again.",
+      );
+      resetGame();
+    }
+  }, 1000);
+}
+
+function formatTimeInMinSec(totalSeconds) {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+function updateGridByLevel() {
+  const grid = document.querySelector(".cards-list");
+
+  if (currentLevel === "hard") {
+    grid.style.gridTemplateColumns = "repeat(6, 75px)";
+  } else {
+    grid.style.gridTemplateColumns = "repeat(4, 75px)";
+  }
+}
+
+// ----------------------------
+// TASK 1: HANDLE CARD CLICK & MATCH (Disappear)
+// ----------------------------
 function handleCardClick(event) {
   startTimer();
   const card = event.currentTarget;
 
+  // Ignore clicks if game over, 2 cards are flipped, card already flipped, or already matched
   if (
     gameOver ||
-    card.classList.contains("flipped") ||
-    flippedCards.length === 2
+    flippedCards.length === 2 ||
+    flippedCards.includes(card) ||
+    matchedCards.includes(card)
   ) {
     return;
   }
@@ -68,17 +112,29 @@ function handleCardClick(event) {
 
     if (card1.dataset.cardId === card2.dataset.cardId) {
       matchedPairs++;
-      flippedCards = [];
 
-      if (matchedPairs === totalPairs) {
-        gameOver = true;
-        clearInterval(timerInterval);
-        showModal(
-          "🚀 Mission Complete!",
-          `You matched all pairs in ${seconds} seconds with ${revealCount} reveals!`,
-        );
-      }
+      // Make matched cards disappear (Week2 feature)
+      setTimeout(() => {
+        card1.style.visibility = "hidden";
+        card2.style.visibility = "hidden";
+
+        matchedCards.push(card1, card2);
+        flippedCards = [];
+
+        // Check if all pairs matched
+        if (matchedPairs === totalPairs) {
+          gameOver = true;
+          clearInterval(timerInterval);
+
+          // Week3 modal for game completion
+          showModal(
+            "🚀 Mission Complete!",
+            `You matched all pairs in ${seconds} seconds with ${revealCount} reveals!`,
+          );
+        }
+      }, 500);
     } else {
+      // Not a match → flip back after delay
       setTimeout(() => {
         card1.classList.remove("flipped");
         card2.classList.remove("flipped");
@@ -88,6 +144,9 @@ function handleCardClick(event) {
   }
 }
 
+// ----------------------------
+// CARD CREATION & RENDERING
+// ----------------------------
 function createElement(tag, className, attributes = {}) {
   const element = document.createElement(tag);
   element.className = className;
@@ -122,11 +181,15 @@ function createCardElement(card) {
 
 function renderCards() {
   const grid = document.querySelector(".cards-list");
+  grid.innerHTML = "";
   cards.forEach((card) => {
     grid.appendChild(createCardElement(card));
   });
 }
 
+// ----------------------------
+// SHUFFLE CARDS
+// ----------------------------
 function shuffleCards(array) {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -136,43 +199,13 @@ function shuffleCards(array) {
   return shuffled;
 }
 
-function formatTimeInMinSec(totalSeconds) {
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
-
-function startTimer() {
-  if (timerStarted) return;
-  timerStarted = true;
-
-  timerInterval = setInterval(() => {
-    seconds++;
-    document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
-
-    if (seconds >= maxTimeByLevel[currentLevel]) {
-      clearInterval(timerInterval);
-      showModal(
-        "⏰ Mission Failed",
-        "Time ran out! The galaxy needs you again.",
-      );
-      resetGame();
-    }
-  }, 1000);
-}
-
-function updateGridByLevel() {
-  const grid = document.querySelector(".cards-list");
-
-  if (currentLevel === "hard") {
-    grid.style.gridTemplateColumns = "repeat(6, 75px)";
-  } else {
-    grid.style.gridTemplateColumns = "repeat(4, 75px)";
-  }
-}
-
+// ----------------------------
+// GAME RESET
+// ----------------------------
 async function resetGame() {
+  // Clear game state
   flippedCards = [];
+  matchedCards = []; // Week2: track matched cards
   revealCount = 0;
   seconds = 0;
   timerStarted = false;
@@ -181,46 +214,65 @@ async function resetGame() {
 
   clearInterval(timerInterval);
 
+  // Reset UI
   document.getElementById("reveal-count").textContent = "0";
   document.getElementById("timer").textContent = "0:00";
 
   const grid = document.querySelector(".cards-list");
   grid.innerHTML = "";
+
+  // Update grid layout based on current level (Week3 feature)
   updateGridByLevel();
 
+  // Fetch cards from API
   const cardDataFromAPI = await getCards();
 
-  const requestedPairs = levelConfig[currentLevel];
+  // Determine total pairs based on level (Week3) or fallback to all cards (Week2)
+  const requestedPairs = levelConfig[currentLevel] || cardDataFromAPI.length;
   const availablePairs = Math.min(requestedPairs, cardDataFromAPI.length);
 
   totalPairs = availablePairs;
 
+  // Select cards and shuffle
   const selectedCards = cardDataFromAPI.slice(0, availablePairs);
   cards = shuffleCards(createPairs(selectedCards));
 
+  // Render cards
   renderCards();
 }
 
+// ----------------------------
+// INITIALIZE GAME
+// ----------------------------
 async function initGame() {
+  // Fetch front image from config API (Week3)
   frontImagePath = await getGameConfig();
 
+  // Fetch cards from API
   const cardDataFromAPI = await getCards();
 
-  const requestedPairs = levelConfig[currentLevel];
+  // Determine total pairs based on current level (Week3)
+  const requestedPairs = levelConfig[currentLevel] || cardDataFromAPI.length;
   const availablePairs = Math.min(requestedPairs, cardDataFromAPI.length);
 
   totalPairs = availablePairs;
   matchedPairs = 0;
 
+  // Select cards and create pairs
   const selectedCards = cardDataFromAPI.slice(0, availablePairs);
   cards = shuffleCards(createPairs(selectedCards));
 
+  // Update grid layout based on level (Week3)
   updateGridByLevel();
+
+  // Render cards (Week2 + Week3)
   renderCards();
 }
 
+// Initialize game
 initGame();
 
+// Event listeners
 document.getElementById("reset-btn").addEventListener("click", resetGame);
 
 document.getElementById("level").addEventListener("change", (e) => {

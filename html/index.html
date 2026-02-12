@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
+    <!-- Stats Container -->
     <div class="stats-container">
       <div class="reveal-count-container">
         <p>Reveals: <span id="reveal-count">0</span></p>
@@ -16,6 +17,8 @@
       </div>
       <button id="reset-btn" class="reset-button">Reset</button>
     </div>
+
+    <!-- Level Selector -->
     <div class="level-container">
       <label for="level">Level:</label>
       <select id="level">
@@ -25,7 +28,10 @@
       </select>
     </div>
 
+    <!-- Cards Grid -->
     <ul class="cards-list"></ul>
+
+    <!-- Modal -->
     <div id="game-modal" class="modal hidden">
       <div class="modal-content">
         <h2 id="modal-title"></h2>
@@ -34,6 +40,7 @@
       </div>
     </div>
 
+    <!-- Scripts -->
     <script src="/scripts/script.js" type="module"></script>
   </body>
 </html>
