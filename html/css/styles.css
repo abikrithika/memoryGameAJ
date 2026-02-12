@@ -92,7 +92,6 @@ body {
   transform-style: preserve-3d;
 }
 
-/* Flip when card has 'flipped' class */
 .card.flipped .card-inner {
   transform: rotateY(180deg);
 }

@@ -9,18 +9,18 @@ let frontImagePath = "cardFront.jpg";
 let totalPairs = 0;
 
 async function getCards() {
-  const response = await fetch("/api/cards"); // API endpoint
+  const response = await fetch("/api/cards");
   const data = await response.json();
-  return data; // returns array of cards
+  return data;
 }
 async function getGameConfig() {
   try {
     const response = await fetch("/api/config/card_front_image");
     const data = await response.json();
-    return data.value || "cardFront.jpg"; // fallback
+    return data.value || "cardFront.jpg";
   } catch (error) {
     console.error("Config fetch error:", error);
-    return "cardFront.jpg"; // fallback
+    return "cardFront.jpg";
   }
 }
 function createPairs(cardData) {
@@ -40,7 +40,6 @@ function startTimer() {
     document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
   }, 1000);
 
-  // Trigger first increment immediately
   seconds++;
   document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
 }
@@ -51,14 +50,10 @@ function formatTimeInMinSec(totalSeconds) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-// ----------------------------
-// TASK 1: HANDLE CARD CLICK & MATCH (Disappear)
-// ----------------------------
 function handleCardClick(event) {
   startTimer();
   const card = event.currentTarget;
 
-  // Ignore clicks if already flipped or matched, or 2 cards are flipped
   if (
     flippedCards.length === 2 ||
     flippedCards.includes(card) ||
@@ -74,24 +69,21 @@ function handleCardClick(event) {
     const [card1, card2] = flippedCards;
 
     if (card1.dataset.cardId === card2.dataset.cardId) {
-      // Cards match → disappear
       setTimeout(() => {
         card1.style.visibility = "hidden";
         card2.style.visibility = "hidden";
 
-        matchedCards.push(card1, card2); // Track matched cards
+        matchedCards.push(card1, card2);
         flippedCards = [];
 
-        // Check if all pairs matched
         if (matchedCards.length === cards.length) {
-          clearInterval(timerInterval); // stop timer
+          clearInterval(timerInterval);
           alert(
             `🎉 Congratulations! You won in ${formatTimeInMinSec(seconds)} and ${revealCount} moves!`,
           );
         }
       }, 500);
     } else {
-      // Not a match → flip back
       setTimeout(() => {
         card1.classList.remove("flipped");
         card2.classList.remove("flipped");
@@ -101,9 +93,6 @@ function handleCardClick(event) {
   }
 }
 
-// ----------------------------
-// CARD CREATION & RENDERING
-// ----------------------------
 function createElement(tag, className, attributes = {}) {
   const element = document.createElement(tag);
   element.className = className;
@@ -144,9 +133,6 @@ function renderCards() {
   });
 }
 
-// ----------------------------
-// SHUFFLE CARDS
-// ----------------------------
 function shuffleCards(array) {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -156,9 +142,6 @@ function shuffleCards(array) {
   return shuffled;
 }
 
-// ----------------------------
-// GAME RESET
-// ----------------------------
 async function resetGame() {
   flippedCards = [];
   matchedCards = []; // clear matched cards
@@ -182,21 +165,14 @@ async function resetGame() {
   renderCards();
 }
 
-// ----------------------------
-// INITIALIZE GAME
-// ----------------------------
 async function initGame() {
-  // Fetch front image from config API
   frontImagePath = await getGameConfig();
 
-  // Fetch cards from API
   const cardDataFromAPI = await getCards();
 
-  // Create pairs and shuffle
   const pairedCards = createPairs(cardDataFromAPI);
   cards = shuffleCards(pairedCards);
 
-  // Render cards on page
   renderCards();
 }
 
