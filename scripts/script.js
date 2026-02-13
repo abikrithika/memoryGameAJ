@@ -24,18 +24,18 @@ const maxTimeByLevel = {
 };
 
 async function getCards() {
-  const response = await fetch("/api/cards"); // API endpoint
+  const response = await fetch("/api/cards"); 
   const data = await response.json();
-  return data; // returns array of cards
+  return data; 
 }
 async function getGameConfig() {
   try {
     const response = await fetch("/api/config/card_front_image");
     const data = await response.json();
-    return data.value || "cardFront.jpg"; // fallback
+    return data.value || "cardFront.jpg"; 
   } catch (error) {
     console.error("Config fetch error:", error);
-    return "cardFront.jpg"; // fallback
+    return "cardFront.jpg"; 
   }
 }
 function createPairs(cardData) {
@@ -50,7 +50,6 @@ function startTimer() {
   if (timerStarted) return;
   timerStarted = true;
 
-  // Trigger first increment immediately (Week2 feature)
   seconds++;
   document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
 
@@ -58,7 +57,6 @@ function startTimer() {
     seconds++;
     document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
 
-    // Week3 feature: check max time per level
     if (seconds >= maxTimeByLevel[currentLevel]) {
       clearInterval(timerInterval);
       showModal(
@@ -86,14 +84,10 @@ function updateGridByLevel() {
   }
 }
 
-// ----------------------------
-// TASK 1: HANDLE CARD CLICK & MATCH (Disappear)
-// ----------------------------
 function handleCardClick(event) {
   startTimer();
   const card = event.currentTarget;
 
-  // Ignore clicks if game over, 2 cards are flipped, card already flipped, or already matched
   if (
     gameOver ||
     flippedCards.length === 2 ||
@@ -113,7 +107,6 @@ function handleCardClick(event) {
     if (card1.dataset.cardId === card2.dataset.cardId) {
       matchedPairs++;
 
-      // Make matched cards disappear (Week2 feature)
       setTimeout(() => {
         card1.style.visibility = "hidden";
         card2.style.visibility = "hidden";
@@ -121,20 +114,18 @@ function handleCardClick(event) {
         matchedCards.push(card1, card2);
         flippedCards = [];
 
-        // Check if all pairs matched
         if (matchedPairs === totalPairs) {
           gameOver = true;
           clearInterval(timerInterval);
 
-          // Week3 modal for game completion
-          showModal(
-            "🚀 Mission Complete!",
-            `You matched all pairs in ${seconds} seconds with ${revealCount} reveals!`,
-          );
+          // showModal(
+          //   "🚀 Mission Complete!",
+          //   `You matched all pairs in ${seconds} seconds with ${revealCount} reveals!`,
+          // );
+          checkWinConditionAndStopTimer();
         }
       }, 500);
     } else {
-      // Not a match → flip back after delay
       setTimeout(() => {
         card1.classList.remove("flipped");
         card2.classList.remove("flipped");
@@ -144,9 +135,6 @@ function handleCardClick(event) {
   }
 }
 
-// ----------------------------
-// CARD CREATION & RENDERING
-// ----------------------------
 function createElement(tag, className, attributes = {}) {
   const element = document.createElement(tag);
   element.className = className;
@@ -187,9 +175,6 @@ function renderCards() {
   });
 }
 
-// ----------------------------
-// SHUFFLE CARDS
-// ----------------------------
 function shuffleCards(array) {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -199,13 +184,9 @@ function shuffleCards(array) {
   return shuffled;
 }
 
-// ----------------------------
-// GAME RESET
-// ----------------------------
 async function resetGame() {
-  // Clear game state
   flippedCards = [];
-  matchedCards = []; // Week2: track matched cards
+  matchedCards = [];
   revealCount = 0;
   seconds = 0;
   timerStarted = false;
@@ -214,71 +195,57 @@ async function resetGame() {
 
   clearInterval(timerInterval);
 
-  // Reset UI
   document.getElementById("reveal-count").textContent = "0";
   document.getElementById("timer").textContent = "0:00";
 
   const grid = document.querySelector(".cards-list");
   grid.innerHTML = "";
 
-  // Update grid layout based on current level (Week3 feature)
   updateGridByLevel();
-
-  // Fetch cards from API
   const cardDataFromAPI = await getCards();
 
-  // Determine total pairs based on level (Week3) or fallback to all cards (Week2)
   const requestedPairs = levelConfig[currentLevel] || cardDataFromAPI.length;
   const availablePairs = Math.min(requestedPairs, cardDataFromAPI.length);
 
   totalPairs = availablePairs;
 
-  // Select cards and shuffle
   const selectedCards = cardDataFromAPI.slice(0, availablePairs);
   cards = shuffleCards(createPairs(selectedCards));
 
-  // Render cards
   renderCards();
 }
 
-// ----------------------------
-// INITIALIZE GAME
-// ----------------------------
 async function initGame() {
-  // Fetch front image from config API (Week3)
   frontImagePath = await getGameConfig();
-
-  // Fetch cards from API
   const cardDataFromAPI = await getCards();
-
-  // Determine total pairs based on current level (Week3)
   const requestedPairs = levelConfig[currentLevel] || cardDataFromAPI.length;
   const availablePairs = Math.min(requestedPairs, cardDataFromAPI.length);
 
   totalPairs = availablePairs;
   matchedPairs = 0;
 
-  // Select cards and create pairs
   const selectedCards = cardDataFromAPI.slice(0, availablePairs);
   cards = shuffleCards(createPairs(selectedCards));
 
-  // Update grid layout based on level (Week3)
   updateGridByLevel();
-
-  // Render cards (Week2 + Week3)
   renderCards();
 }
-
-// Initialize game
-initGame();
-
-// Event listeners
-document.getElementById("reset-btn").addEventListener("click", resetGame);
 
 document.getElementById("level").addEventListener("change", (e) => {
   currentLevel = e.target.value;
   resetGame();
 });
+
+document
+  .getElementById("save-score-form")
+  .addEventListener("submit", handleSaveScore);
+document
+  .getElementById("play-again-btn")
+  .addEventListener("click", handlePlayAgain);
+document.getElementById("reset-btn").addEventListener("click", resetGame);
+
+initGame();
+
 
 function showModal(title, message) {
   const modal = document.getElementById("game-modal");
@@ -295,3 +262,129 @@ document.getElementById("modal-btn").addEventListener("click", () => {
   hideModal();
   resetGame();
 });
+
+async function loadScores() {
+  try {
+    const response = await fetch("/scores");
+    if (!response.ok) throw new Error("Failed to load scores");
+    const scores = await response.json();
+    return scores;
+  } catch (error) {
+    console.error("Error loading scores:", error);
+    return [];
+  }
+}
+
+async function saveScore(playerName, time, reveals) {
+  try {
+    const response = await fetch("/scores", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: playerName,
+        time: time,
+        reveals: reveals,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Failed to save score");
+    const topScores = await response.json();
+    return topScores;
+  } catch (error) {
+    console.error("Error saving score:", error);
+    return [];
+  }
+}
+
+async function displayScoreboard(elementId = "results-scoreboard-list") {
+  const scores = await loadScores();
+  const scoreboardList = document.getElementById(elementId);
+
+  if (!scoreboardList) return;
+
+  // Clear existing content
+  scoreboardList.innerHTML = "";
+
+  if (scores.length === 0) {
+    const emptyMessage = createElement("div", "empty-scoreboard");
+    emptyMessage.textContent = "No scores yet. Be the first!";
+    scoreboardList.appendChild(emptyMessage);
+    return;
+  }
+
+  scores.forEach((score, index) => {
+    const scoreItem = createElement("div", "score-item");
+
+    const scoreName = createElement("div", "score-name");
+    scoreName.textContent = `${index + 1}. ${score.name}`;
+
+    const scoreTime = createElement("div", "score-time");
+    scoreTime.textContent = `Time: ${formatTimeInMinSec(score.time)}`;
+
+    const scoreReveals = createElement("div", "score-reveals");
+    scoreReveals.textContent = `Reveals: ${score.reveals}`;
+
+    scoreItem.append(scoreName, scoreTime, scoreReveals);
+    scoreboardList.appendChild(scoreItem);
+  });
+}
+
+async function showResultsPage() {
+  document.getElementById("game-container").classList.add("hidden");
+  document.getElementById("results-page").classList.remove("hidden");
+
+  document.getElementById("final-time").textContent =
+    formatTimeInMinSec(seconds);
+  document.getElementById("final-reveals").textContent = revealCount;
+
+  await displayScoreboard();
+
+  // Focus on name input
+  document.getElementById("player-name-input").focus();
+}
+
+function handleSaveScore(event) {
+  event.preventDefault();
+
+  const nameInput = document.getElementById("player-name-input");
+  const playerName = nameInput.value.trim();
+
+  if (playerName) {
+    saveScore(playerName, seconds, revealCount).then(() => {
+      displayScoreboard();
+
+      // Disable form after saving
+      nameInput.disabled = true;
+      event.target.querySelector("button").disabled = true;
+      event.target.querySelector("button").textContent = "Saved!";
+    });
+  }
+}
+
+function handlePlayAgain() {
+  document.getElementById("results-page").classList.add("hidden");
+  document.getElementById("game-container").classList.remove("hidden");
+
+  // Reset form
+  const form = document.getElementById("save-score-form");
+  form.reset();
+  const nameInput = document.getElementById("player-name-input");
+  nameInput.disabled = false;
+  const saveButton = form.querySelector("button");
+  saveButton.disabled = false;
+  saveButton.textContent = "Save Score";
+
+  resetGame();
+}
+
+function checkWinConditionAndStopTimer() {
+  if (matchedPairs === totalPairs) {
+    clearInterval(timerInterval);
+
+    setTimeout(async () => {
+      await showResultsPage();
+    }, 500);
+  }
+}
