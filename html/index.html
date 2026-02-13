@@ -7,36 +7,69 @@
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
-    <!-- Stats Container -->
-    <div class="stats-container">
-      <div class="reveal-count-container">
-        <p>Reveals: <span id="reveal-count">0</span></p>
+    <div id="game-container">
+      <div class="stats-container">
+        <div class="reveal-count-container">
+          <p>Reveals: <span id="reveal-count">0</span></p>
+        </div>
+        <div class="timer-container">
+          <p>Time: <span id="timer">0:00</span></p>
+        </div>
+        <button id="reset-btn" class="reset-button">Reset</button>
       </div>
-      <div class="timer-container">
-        <p>Time: <span id="timer">0:00</span></p>
+
+      <!-- Level Selector -->
+      <div class="level-container">
+        <label for="level">Level:</label>
+        <select id="level">
+          <option value="easy">Easy (6 pairs)</option>
+          <option value="medium">Medium (8 pairs)</option>
+          <option value="hard">Hard (12 pairs)</option>
+        </select>
       </div>
-      <button id="reset-btn" class="reset-button">Reset</button>
+
+      <!-- Cards Grid -->
+      <ul class="cards-list"></ul>
     </div>
-
-    <!-- Level Selector -->
-    <div class="level-container">
-      <label for="level">Level:</label>
-      <select id="level">
-        <option value="easy">Easy (6 pairs)</option>
-        <option value="medium">Medium (8 pairs)</option>
-        <option value="hard">Hard (12 pairs)</option>
-      </select>
-    </div>
-
-    <!-- Cards Grid -->
-    <ul class="cards-list"></ul>
-
     <!-- Modal -->
     <div id="game-modal" class="modal hidden">
       <div class="modal-content">
         <h2 id="modal-title"></h2>
         <p id="modal-message"></p>
         <button id="modal-btn">Play Again</button>
+      </div>
+    </div>
+
+    <!-- End Game Results Page -->
+    <div id="results-page" class="hidden">
+      <div class="results-content">
+        <h2>Congratulations!</h2>
+        <div class="game-stats">
+          <p class="stat-item">Time: <span id="final-time"></span></p>
+          <p class="stat-item">Reveals: <span id="final-reveals"></span></p>
+        </div>
+
+        <form id="save-score-form">
+          <input
+            type="text"
+            id="player-name-input"
+            name="player-name"
+            required
+            minlength="1"
+            placeholder="Enter your name"
+            autocomplete="on"
+          />
+          <button type="submit" class="save-button">Save Score</button>
+        </form>
+
+        <div class="scoreboard">
+          <h3>Hall of Fame</h3>
+          <div id="results-scoreboard-list" class="scoreboard-list"></div>
+        </div>
+
+        <button id="play-again-btn" class="play-again-button">
+          Play Again
+        </button>
       </div>
     </div>
 
