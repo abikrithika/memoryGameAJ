@@ -45,6 +45,54 @@ app.get("/api/config/:key", async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log("Server running at http://localhost:3000");
+// GET endpoint for retrieving all scores (top 10)
+app.get("/scores", async function (request, response) {
+  try {
+    const scores = await db("score")
+      .select("*")
+      .orderBy("time", "asc")
+      .orderBy("reveals", "asc")
+      .limit(10);
+    response.json(scores);
+  } catch (error) {
+    console.error("Scores endpoint error:", error);
+    response.status(500).json({ error: "Failed to retrieve scores" });
+  }
+});
+
+// POST endpoint for saving a new score
+app.post("/scores", async function (request, response) {
+  try {
+    const { name, time, reveals } = request.body;
+
+    // Validate input
+    if (!name || time === undefined || reveals === undefined) {
+      return response.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Insert new score
+    await db("score").insert({
+      name,
+      time,
+      reveals,
+    });
+
+    // Retrieve top 10 scores
+    const topScores = await db("score")
+      .select("*")
+      .orderBy("time", "asc")
+      .orderBy("reveals", "asc")
+      .limit(10);
+
+    response.status(201).json(topScores);
+  } catch (error) {
+    console.error("Save score endpoint error:", error);
+    response.status(500).json({ error: "Failed to save score" });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
