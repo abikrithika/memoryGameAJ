@@ -131,7 +131,9 @@ function createCardElement(card) {
 
 function renderCards() {
   const grid = gridElement;
-  grid.innerHTML = "";
+  while (gridElement.firstChild) {
+  gridElement.removeChild(gridElement.firstChild);
+}
   cards.forEach((card) => {
     grid.appendChild(createCardElement(card));
   });
@@ -159,7 +161,9 @@ async function resetGame() {
   timerElement.textContent = "0:00";
 
   const grid = gridElement;
-  grid.innerHTML = "";
+ while (gridElement.firstChild) {
+  gridElement.removeChild(gridElement.firstChild);
+}
 
   const cardDataFromAPI = await getCards();
   totalPairs = cardDataFromAPI.length;
