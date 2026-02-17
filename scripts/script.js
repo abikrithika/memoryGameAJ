@@ -1,57 +1,99 @@
 let cards = [];
 let flippedCards = [];
 let revealCount = 0;
+let matchedCards = [];
 let seconds = 0;
 let timerStarted = false;
 let timerInterval = null;
 let frontImagePath = "cardFront.jpg";
 let totalPairs = 0;
 
-async function getCards() {
-  const response = await fetch("/api/cards"); // API endpoint
-  const data = await response.json();
-  return data; // returns array of cards
-}
+const gridElement = document.querySelector(".cards-list");
+const revealCountElement = document.getElementById("reveal-count");
+const timerElement = document.getElementById("timer");
 
+async function getCards() {
+  const response = await fetch("/api/cards");
+  const data = await response.json();
+  return data;
+}
 async function getGameConfig() {
   try {
     const response = await fetch("/api/config/card_front_image");
     const data = await response.json();
-    return data.value || "cardFront.jpg"; // fallback
+    return data.value || "cardFront.jpg";
   } catch (error) {
     console.error("Config fetch error:", error);
-    return "cardFront.jpg"; // fallback
+    return "cardFront.jpg";
   }
 }
 function createPairs(cardData) {
   return [...cardData, ...cardData];
 }
-
 function incrementRevealCount() {
   revealCount++;
-  document.getElementById("reveal-count").textContent = revealCount;
+  revealCountElement.textContent = revealCount;
+}
+
+function startTimer() {
+  if (timerStarted) return;
+  timerStarted = true;
+
+  timerInterval = setInterval(() => {
+    seconds++;
+    timerElement.textContent = formatTimeInMinSec(seconds);
+  }, 1000);
+
+  seconds++;
+  timerElement.textContent = formatTimeInMinSec(seconds);
+}
+
+function formatTimeInMinSec(totalSeconds) {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 function handleCardClick(event) {
   startTimer();
   const card = event.currentTarget;
 
-  if (flippedCards.length === 2) {
+  if (
+    flippedCards.length === 2 ||
+    flippedCards.includes(card) ||
+    matchedCards.includes(card)
+  )
     return;
-  }
 
-  flippedCards.push(card);
   card.classList.add("flipped");
-
-  incrementRevealCount();
-  const [card1, card2] = flippedCards;
+  flippedCards.push(card);
 
   if (flippedCards.length === 2) {
-    setTimeout(() => {
-      card1.classList.remove("flipped");
-      card2.classList.remove("flipped");
-      flippedCards = [];
-    }, 1000);
+    incrementRevealCount();
+    const [card1, card2] = flippedCards;
+
+    if (card1.dataset.cardId === card2.dataset.cardId) {
+      setTimeout(() => {
+        card1.style.visibility = "hidden";
+        card2.style.visibility = "hidden";
+
+        matchedCards.push(card1, card2);
+        flippedCards = [];
+
+        if (matchedCards.length === cards.length) {
+          clearInterval(timerInterval);
+          alert(
+            `🎉 Congratulations! You won in ${formatTimeInMinSec(seconds)} and ${revealCount} moves!`,
+          );
+        }
+      }, 500);
+    } else {
+      setTimeout(() => {
+        card1.classList.remove("flipped");
+        card2.classList.remove("flipped");
+        flippedCards = [];
+      }, 1000);
+    }
   }
 }
 
@@ -88,82 +130,59 @@ function createCardElement(card) {
 }
 
 function renderCards() {
-  const grid = document.querySelector(".cards-list");
+  const grid = gridElement;
+  while (gridElement.firstChild) {
+  gridElement.removeChild(gridElement.firstChild);
+}
   cards.forEach((card) => {
-    const cardElement = createCardElement(card);
-    grid.appendChild(cardElement);
+    grid.appendChild(createCardElement(card));
   });
 }
 
 function shuffleCards(array) {
   const shuffled = [...array];
-
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-
   return shuffled;
-}
-
-function formatTimeInMinSec(totalSeconds) {
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
-
-function startTimer() {
-  if (timerStarted) return;
-  timerStarted = true;
-
-  timerInterval = setInterval(() => {
-    seconds++;
-    document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
-  }, 1000);
-
-  // Trigger first increment immediately to avoid 1-second delay
-  seconds++;
-  document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
 }
 
 async function resetGame() {
   flippedCards = [];
+  matchedCards = [];
   revealCount = 0;
   seconds = 0;
   timerStarted = false;
 
   clearInterval(timerInterval);
 
-  document.getElementById("reveal-count").textContent = "0";
-  document.getElementById("timer").textContent = "0:00";
+  revealCountElement.textContent = "0";
+  timerElement.textContent = "0:00";
 
-  const grid = document.querySelector(".cards-list");
-  grid.innerHTML = "";
+  const grid = gridElement;
+ while (gridElement.firstChild) {
+  gridElement.removeChild(gridElement.firstChild);
+}
 
-  // Fetch fresh cards from API
   const cardDataFromAPI = await getCards();
   totalPairs = cardDataFromAPI.length;
 
-  // Shuffle and create pairs
   cards = shuffleCards(createPairs(cardDataFromAPI));
 
   renderCards();
 }
 
 async function initGame() {
-  // Fetch front image from config API
   frontImagePath = await getGameConfig();
 
-  // Fetch cards from API
   const cardDataFromAPI = await getCards();
 
-  // Create pairs and shuffle
   const pairedCards = createPairs(cardDataFromAPI);
   cards = shuffleCards(pairedCards);
 
-  // Render cards on page
   renderCards();
 }
-initGame();
 
+initGame();
 document.getElementById("reset-btn").addEventListener("click", resetGame);
