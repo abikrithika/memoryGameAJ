@@ -8,6 +8,10 @@ let timerInterval = null;
 let frontImagePath = "cardFront.jpg";
 let totalPairs = 0;
 
+const gridElement = document.querySelector(".cards-list");
+const revealCountElement = document.getElementById("reveal-count");
+const timerElement = document.getElementById("timer");
+
 async function getCards() {
   const response = await fetch("/api/cards");
   const data = await response.json();
@@ -28,7 +32,7 @@ function createPairs(cardData) {
 }
 function incrementRevealCount() {
   revealCount++;
-  document.getElementById("reveal-count").textContent = revealCount;
+  revealCountElement.textContent = revealCount;
 }
 
 function startTimer() {
@@ -37,11 +41,11 @@ function startTimer() {
 
   timerInterval = setInterval(() => {
     seconds++;
-    document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
+    timerElement.textContent = formatTimeInMinSec(seconds);
   }, 1000);
 
   seconds++;
-  document.getElementById("timer").textContent = formatTimeInMinSec(seconds);
+  timerElement.textContent = formatTimeInMinSec(seconds);
 }
 
 function formatTimeInMinSec(totalSeconds) {
@@ -126,7 +130,7 @@ function createCardElement(card) {
 }
 
 function renderCards() {
-  const grid = document.querySelector(".cards-list");
+  const grid = gridElement;
   grid.innerHTML = "";
   cards.forEach((card) => {
     grid.appendChild(createCardElement(card));
@@ -151,10 +155,10 @@ async function resetGame() {
 
   clearInterval(timerInterval);
 
-  document.getElementById("reveal-count").textContent = "0";
-  document.getElementById("timer").textContent = "0:00";
+  revealCountElement.textContent = "0";
+  timerElement.textContent = "0:00";
 
-  const grid = document.querySelector(".cards-list");
+  const grid = gridElement;
   grid.innerHTML = "";
 
   const cardDataFromAPI = await getCards();
