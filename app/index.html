@@ -4,9 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Memory Game</title>
-    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <!-- Floating Hall of Fame Button -->
+    <button
+      id="view-scores-btn"
+      class="view-scores-button"
+      aria-label="View Hall of Fame"
+    >
+      <span class="button-icon">🏆</span>
+      <span class="button-text">Hall of Fame</span>
+    </button>
+
     <div id="game-container">
       <div class="stats-container">
         <div class="reveal-count-container">
@@ -63,7 +73,10 @@
         </form>
 
         <div class="scoreboard">
-          <h3>Hall of Fame</h3>
+          <h3>
+            Hall of Fame
+            <span id="scoreboard-level-label"></span>
+          </h3>
           <div id="results-scoreboard-list" class="scoreboard-list"></div>
         </div>
 
@@ -74,6 +87,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/scripts/script.js" type="module"></script>
+    <script src="/script.js" type="module"></script>
   </body>
 </html>
