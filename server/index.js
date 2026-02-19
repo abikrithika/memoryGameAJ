@@ -5,15 +5,15 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const appDir = path.join(__dirname, "../app");
+const imagesDir = path.join(__dirname, "../images");
 
 const app = express();
 app.use(express.json());
 
 // Serve frontend and assets
-app.use(express.static(path.join(__dirname, "../html"))); // index.html
-app.use("/scripts", express.static(path.join(__dirname, "../scripts"))); // script.js
-app.use("/css", express.static(path.join(__dirname, "../html/css"))); // styles.css
-app.use("/images", express.static(path.join(__dirname, "../images"))); // images
+app.use(express.static(appDir)); // index.html, script.js, styles.css
+app.use("/images", express.static(imagesDir)); // images
 
 // Database setup
 const db = knex({
@@ -21,6 +21,29 @@ const db = knex({
   connection: { filename: "./database.db" },
   useNullAsDefault: true,
 });
+
+const LEADERBOARD_SIZE = 10;
+const ALLOWED_LEVELS = new Set(["easy", "medium", "hard"]);
+
+function normalizeLevel(value) {
+  if (!value) return null;
+  const normalized = String(value).toLowerCase();
+  return ALLOWED_LEVELS.has(normalized) ? normalized : null;
+}
+
+// Helper function to get top 10 scores
+async function getTopScores(level) {
+  return await db("score")
+    .select("*")
+    .modify((queryBuilder) => {
+      if (level) {
+        queryBuilder.where({ level });
+      }
+    })
+    .orderBy("time", "asc")
+    .orderBy("reveals", "asc")
+    .limit(LEADERBOARD_SIZE);
+}
 
 // API endpoints
 app.get("/api/cards", async (req, res) => {
@@ -48,11 +71,12 @@ app.get("/api/config/:key", async (req, res) => {
 // GET endpoint for retrieving all scores (top 10)
 app.get("/scores", async function (request, response) {
   try {
-    const scores = await db("score")
-      .select("*")
-      .orderBy("time", "asc")
-      .orderBy("reveals", "asc")
-      .limit(10);
+    const level = normalizeLevel(request.query.level);
+    if (request.query.level && !level) {
+      return response.status(400).json({ error: "Invalid level" });
+    }
+
+    const scores = await getTopScores(level);
     response.json(scores);
   } catch (error) {
     console.error("Scores endpoint error:", error);
@@ -63,10 +87,16 @@ app.get("/scores", async function (request, response) {
 // POST endpoint for saving a new score
 app.post("/scores", async function (request, response) {
   try {
-    const { name, time, reveals } = request.body;
+    const { name, time, reveals, level } = request.body;
+    const normalizedLevel = normalizeLevel(level);
 
     // Validate input
-    if (!name || time === undefined || reveals === undefined) {
+    if (
+      !name ||
+      time === undefined ||
+      reveals === undefined ||
+      !normalizedLevel
+    ) {
       return response.status(400).json({ error: "Missing required fields" });
     }
 
@@ -75,14 +105,28 @@ app.post("/scores", async function (request, response) {
       name,
       time,
       reveals,
+      level: normalizedLevel,
     });
 
-    // Retrieve top 10 scores
-    const topScores = await db("score")
-      .select("*")
-      .orderBy("time", "asc")
-      .orderBy("reveals", "asc")
-      .limit(10);
+    // Get top 10 scores
+    const topScores = await getTopScores(normalizedLevel);
+
+    // Delete scores beyond top 10 to prevent database bloat
+    if (topScores.length === LEADERBOARD_SIZE) {
+      const worstTopScore = topScores[LEADERBOARD_SIZE - 1];
+      await db("score")
+        .where({ level: normalizedLevel })
+        .andWhere(function () {
+          this.where("time", ">", worstTopScore.time).orWhere(function () {
+            this.where("time", "=", worstTopScore.time).andWhere(
+              "reveals",
+              ">",
+              worstTopScore.reveals,
+            );
+          });
+        })
+        .delete();
+    }
 
     response.status(201).json(topScores);
   } catch (error) {
